@@ -1,4 +1,3 @@
-
 import streamlit as st
 import openai
 import os
@@ -23,9 +22,9 @@ def check_api_key(api_key):
     except Exception as e:
         return False, f"Wystąpił nieoczekiwany błąd: {e}"
 
-def generate_coloring_page_prompt(theme, description):
-    """Generuje prompt dla DALL-E na podstawie tematu i opisu."""
-    prompt = f"Stwórz prostą, czarno-białą kolorowankę dla dzieci. Obrazek powinien mieć wyraźne, grube kontury i być łatwy do pokolorowania. Temat: {theme}. Opis: {description}. Styl: kreskówka, bez cieni, czyste linie."
+def generate_coloring_page_prompt(description):
+    """Generuje prompt dla DALL-E na podstawie opisu."""
+    prompt = f"Stwórz prostą, czarno-białą kolorowankę dla dzieci. Obrazek powinien mieć wyraźne, grube kontury i być łatwy do pokolorowania. Opis: {description}. Styl: kreskówka, bez cieni, czyste linie."
     return prompt
 
 def generate_image(prompt, api_key):
@@ -56,7 +55,7 @@ def create_pdf(image_url):
         img_width = 190 
         # Centralizacja obrazu
         x_pos = (210 - img_width) / 2
-        pdf.image(img_data, x=x_pos, y=10, w=img_width)
+        pdf.image(img_data, x=x_pos, y=10, w=img_width, type='PNG')
         
         # Zapis do bufora w pamięci
         pdf_output = pdf.output(dest='S').encode('latin-1')
@@ -72,8 +71,6 @@ st.set_page_config(page_title="Generator Kolorowanek AI", layout="centered")
 st.title("🎨 Generator Kolorowanek AI")
 st.write('''
 Aplikacja do generowania kolorowanek dla dzieci przy wykorzystaniu AI. 
-Prosta aplikacja. "Mniej znaczy więcej". Bez ozdobników i upiększeń. 
-Prosta, surowa, funkcjonalna.
 ''')
 
 # --- Sidebar - Klucz API ---
@@ -96,16 +93,15 @@ else:
 # --- Główny interfejs ---
 st.header("1. Opisz swoją kolorowankę")
 
-theme = st.text_input("Temat kolorowanki", placeholder="np. leśne zwierzęta, pojazdy kosmiczne")
 description = st.text_area("Co ma zawierać kolorowanka?", placeholder="np. uśmiechnięty lew bawiący się piłką w dżungli")
 
 if st.button("Wygeneruj kolorowankę"):
-    if not theme or not description:
-        st.error("Wypełnij temat i opis, aby wygenerować kolorowankę.")
+    if not description:
+        st.error("Wypełnij opis, aby wygenerować kolorowankę.")
     else:
         with st.spinner("Sztuczna inteligencja tworzy Twoją kolorowankę..."):
             # 1. Generowanie promptu
-            prompt = generate_coloring_page_prompt(theme, description)
+            prompt = generate_coloring_page_prompt(description)
             st.info(f"**Wygenerowany prompt:**\n{prompt}")
 
             # 2. Generowanie obrazu
@@ -114,7 +110,7 @@ if st.button("Wygeneruj kolorowankę"):
                 st.error(error)
             else:
                 st.session_state.image_url = image_url
-                st.session_state.theme = theme
+                st.session_state.description = description # Zapisujemy opis do późniejszego wykorzystania
 
 if "image_url" in st.session_state:
     st.header("2. Twoja kolorowanka jest gotowa!")
@@ -131,7 +127,7 @@ if "image_url" in st.session_state:
             st.download_button(
                 label="Pobierz jako PDF",
                 data=pdf_bytes,
-                file_name=f"kolorowanka_{st.session_state.theme.replace(' ', '_')}.pdf",
+                file_name=f"kolorowanka.pdf",
                 mime="application/pdf"
             )
     
