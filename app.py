@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from fpdf import FPDF
 import requests
 from io import BytesIO
+from PIL import Image
 
 # --- Konfiguracja ---
 load_dotenv()
@@ -22,9 +23,39 @@ def check_api_key(api_key):
     except Exception as e:
         return False, f"Wystąpił nieoczekiwany błąd: {e}"
 
-def generate_coloring_page_prompt(description):
-    """Generuje prompt dla DALL-E na podstawie opisu."""
-    prompt = f"Stwórz prostą, czarno-białą kolorowankę dla dzieci. Obrazek powinien mieć wyraźne, grube kontury i być łatwy do pokolorowania. Opis: {description}. Styl: kreskówka, bez cieni, czyste linie."
+def enhance_description_with_ai(theme, description, api_key):
+    """Używa modelu językowego do wzbogacenia opisu użytkownika."""
+    try:
+        openai.api_key = api_key
+        system_prompt = """
+        Jesteś kreatywnym asystentem, który pomaga tworzyć szczegółowe opisy do kolorowanek dla dzieci.
+        Twoim zadaniem jest wziąć temat i ogólny opis od użytkownika i przekształcić go w bardziej barwny,
+        szczegółowy i konkretny opis sceny, który będzie idealny dla generatora obrazów AI.
+        Opis powinien być prosty do zrozumienia dla dziecka i łatwy do narysowania.
+        Zawsze zwracaj tylko i wyłącznie ulepszony opis, bez żadnych dodatkowych komentarzy.
+        Przykład:
+        Użytkownik: Temat="Zwierzęta", Opis="kot"
+        Ty: "Uroczy, puszysty kotek z dużymi oczami bawi się kłębkiem wełny na miękkim dywanie w przytulnym pokoju."
+        """
+        user_prompt = f"Temat: '{theme}', Opis: '{description}'"
+
+        response = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=150
+        )
+        enhanced_description = response.choices[0].message.content.strip()
+        return enhanced_description, None
+    except Exception as e:
+        return None, f"Błąd podczas ulepszania opisu: {e}"
+
+def generate_coloring_page_prompt(theme, description):
+    """Generuje prompt dla DALL-E na podstawie tematu i opisu."""
+    prompt = f"Stwórz stronę do kolorowania dla dzieci. Obrazek musi być wyłącznie czarno-biały, z grubymi, wyraźnymi konturami na czystym białym tle. Bez cieni, bez odcieni szarości, bez żadnych kolorów. Temat: {theme}. Opis: {description}. Styl: prosta kreskówka."
     return prompt
 
 def generate_image(prompt, api_key):
@@ -49,13 +80,18 @@ def create_pdf(image_url):
         response = requests.get(image_url)
         img_data = BytesIO(response.content)
         
+        # Użycie Pillow do otwarcia obrazu
+        image = Image.open(img_data)
+
         pdf = FPDF(orientation='P', unit='mm', format='A4')
         pdf.add_page()
         # Szerokość obrazu w mm (A4 ma 210mm szerokości)
         img_width = 190 
         # Centralizacja obrazu
         x_pos = (210 - img_width) / 2
-        pdf.image(img_data, x=x_pos, y=10, w=img_width, type='PNG')
+        
+        # Przekazanie obiektu obrazu Pillow bezpośrednio do FPDF
+        pdf.image(image, x=x_pos, y=10, w=img_width)
         
         # Zapis do bufora w pamięci
         pdf_output = pdf.output(dest='S').encode('latin-1')
@@ -93,24 +129,58 @@ else:
 # --- Główny interfejs ---
 st.header("1. Opisz swoją kolorowankę")
 
-description = st.text_area("Co ma zawierać kolorowanka?", placeholder="np. uśmiechnięty lew bawiący się piłką w dżungli")
+# Inicjalizacja stanu sesji dla opisu
+if 'description_text' not in st.session_state:
+    st.session_state.description_text = ""
 
-if st.button("Wygeneruj kolorowankę"):
-    if not description:
-        st.error("Wypełnij opis, aby wygenerować kolorowankę.")
-    else:
-        with st.spinner("Sztuczna inteligencja tworzy Twoją kolorowankę..."):
-            # 1. Generowanie promptu
-            prompt = generate_coloring_page_prompt(description)
-            st.info(f"**Wygenerowany prompt:**\n{prompt}")
+theme = st.text_input("Temat kolorowanki", placeholder="np. leśne zwierzęta, pojazdy kosmiczne")
 
-            # 2. Generowanie obrazu
-            image_url, error = generate_image(prompt, api_key)
-            if error:
-                st.error(error)
-            else:
-                st.session_state.image_url = image_url
-                st.session_state.description = description # Zapisujemy opis do późniejszego wykorzystania
+# Pole tekstowe, którego zawartość jest kontrolowana przez stan sesji
+description = st.text_area(
+    "Co ma zawierać kolorowanka?",
+    value=st.session_state.description_text,
+    placeholder="np. uśmiechnięty lew bawiący się piłką w dżungli",
+    key="description_area",
+    height=250
+)
+st.session_state.description_text = description # Synchronizacja po ewentualnej edycji przez użytkownika
+
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("Ulepsz opis ✨"):
+        if not theme or not description:
+            st.error("Wypełnij temat i opis, aby go ulepszyć.")
+        else:
+            with st.spinner("AI ulepsza Twój opis..."):
+                enhanced_desc, error = enhance_description_with_ai(theme, description, api_key)
+                if error:
+                    st.error(error)
+                else:
+                    st.session_state.description_text = enhanced_desc
+                    st.rerun()
+
+with col2:
+    if st.button("Wygeneruj kolorowankę 🎨"):
+        if not theme or not description:
+            st.error("Wypełnij temat i opis, aby wygenerować kolorowankę.")
+        else:
+            with st.spinner("Sztuczna inteligencja tworzy Twoją kolorowankę..."):
+                # Używamy opisu, który jest aktualnie w polu tekstowym
+                final_description = description
+                
+                # 1. Generowanie promptu
+                prompt = generate_coloring_page_prompt(theme, final_description)
+                st.info(f"**Wygenerowany prompt:**\n{prompt}")
+
+                # 2. Generowanie obrazu
+                image_url, error = generate_image(prompt, api_key)
+                if error:
+                    st.error(error)
+                else:
+                    st.session_state.image_url = image_url
+                    st.session_state.theme = theme
+                    st.rerun()
 
 if "image_url" in st.session_state:
     st.header("2. Twoja kolorowanka jest gotowa!")
@@ -127,7 +197,7 @@ if "image_url" in st.session_state:
             st.download_button(
                 label="Pobierz jako PDF",
                 data=pdf_bytes,
-                file_name=f"kolorowanka.pdf",
+                file_name=f"kolorowanka_{st.session_state.theme.replace(' ', '_')}.pdf",
                 mime="application/pdf"
             )
     
