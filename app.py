@@ -75,24 +75,29 @@ def generate_image(prompt, api_key):
         return None, f"Błąd podczas generowania obrazu: {e}"
 
 def create_pdf(image_url):
-    """Tworzy plik PDF z wygenerowanego obrazka."""
+    """Tworzy plik PDF z wygenerowanego obrazka w poziomym układzie A4."""
     try:
         response = requests.get(image_url)
         img_data = BytesIO(response.content)
-        
-        # Użycie Pillow do otwarcia obrazu
-        image = Image.open(img_data)
+        # Zapisz obraz tymczasowo na dysku, bo FPDF nie obsługuje obiektów Pillow ani BytesIO
+        with Image.open(img_data) as image:
+            temp_path = "temp_coloring.png"
+            image.save(temp_path, format="PNG")
 
-        pdf = FPDF(orientation='P', unit='mm', format='A4')
+        pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
-        # Szerokość obrazu w mm (A4 ma 210mm szerokości)
-        img_width = 190 
-        # Centralizacja obrazu
-        x_pos = (210 - img_width) / 2
-        
-        # Przekazanie obiektu obrazu Pillow bezpośrednio do FPDF
-        pdf.image(image, x=x_pos, y=10, w=img_width)
-        
+        # Wymiary A4 poziomo: 297 x 210 mm
+        page_width = 297
+        page_height = 210
+        # Ustal szerokość i wysokość obrazu, aby zachować proporcje i nie wychodzić poza marginesy
+        img_width = page_width - 20  # 10 mm marginesu z każdej strony
+        img_height = page_height - 20
+        # Wstaw obraz na środek strony
+        x_pos = (page_width - img_width) / 2
+        y_pos = (page_height - img_height) / 2
+        pdf.image(temp_path, x=x_pos, y=y_pos, w=img_width, h=img_height)
+        # Usuń plik tymczasowy
+        os.remove(temp_path)
         # Zapis do bufora w pamięci
         pdf_output = pdf.output(dest='S').encode('latin-1')
         return pdf_output, None
@@ -129,9 +134,11 @@ else:
 # --- Główny interfejs ---
 st.header("1. Opisz swoją kolorowankę")
 
-# Inicjalizacja stanu sesji dla opisu
+# Inicjalizacja stanu sesji
 if 'description_text' not in st.session_state:
     st.session_state.description_text = ""
+if 'generated_prompt' not in st.session_state:
+    st.session_state.generated_prompt = None
 
 theme = st.text_input("Temat kolorowanki", placeholder="np. leśne zwierzęta, pojazdy kosmiczne")
 
@@ -158,6 +165,7 @@ with col1:
                     st.error(error)
                 else:
                     st.session_state.description_text = enhanced_desc
+                    st.session_state.generated_prompt = None # Resetuj prompt po zmianie opisu
                     st.rerun()
 
 with col2:
@@ -166,14 +174,11 @@ with col2:
             st.error("Wypełnij temat i opis, aby wygenerować kolorowankę.")
         else:
             with st.spinner("Sztuczna inteligencja tworzy Twoją kolorowankę..."):
-                # Używamy opisu, który jest aktualnie w polu tekstowym
                 final_description = description
                 
-                # 1. Generowanie promptu
                 prompt = generate_coloring_page_prompt(theme, final_description)
-                st.info(f"**Wygenerowany prompt:**\n{prompt}")
+                st.session_state.generated_prompt = prompt # Zapisz prompt do stanu sesji
 
-                # 2. Generowanie obrazu
                 image_url, error = generate_image(prompt, api_key)
                 if error:
                     st.error(error)
@@ -182,12 +187,14 @@ with col2:
                     st.session_state.theme = theme
                     st.rerun()
 
+# Wyświetlanie promptu w pełnej szerokości, jeśli istnieje
+if st.session_state.get('generated_prompt'):
+    st.info(f"**Wygenerowany prompt:**\n{st.session_state.generated_prompt}")
+
 if "image_url" in st.session_state:
     st.header("2. Twoja kolorowanka jest gotowa!")
     st.image(st.session_state.image_url, caption="Wygenerowana kolorowanka")
 
-    st.header("3. Pobierz lub popraw")
-    
     # Pobieranie PDF
     with st.spinner("Przygotowuję plik PDF..."):
         pdf_bytes, error = create_pdf(st.session_state.image_url)
