@@ -1,44 +1,47 @@
+
+"""Aplikacja Streamlit do generowania kolorowanek AI (DALL-E 3, GPT-4o)."""
+
+import os
+from io import BytesIO
 import streamlit as st
 import openai
-import os
 from dotenv import load_dotenv
 from fpdf import FPDF
 import requests
-from io import BytesIO
 from PIL import Image
+
 
 # --- Konfiguracja ---
 load_dotenv()
 
 # --- Funkcje pomocnicze ---
 
-def check_api_key(api_key):
+def check_api_key(openai_key):
     """Sprawdza poprawność klucza API OpenAI."""
-    openai.api_key = api_key
+    openai.api_key = openai_key
     try:
         openai.models.list()
         return True, "Klucz API jest poprawny."
     except openai.AuthenticationError:
         return False, "Błąd uwierzytelniania. Sprawdź swój klucz API."
-    except Exception as e:
-        return False, f"Wystąpił nieoczekiwany błąd: {e}"
+    except Exception as exc:
+        return False, f"Wystąpił nieoczekiwany błąd: {exc}"
 
-def enhance_description_with_ai(theme, description, api_key):
+
+def enhance_description_with_ai(theme_val, desc_val, openai_key):
     """Używa modelu językowego do wzbogacenia opisu użytkownika."""
+    openai.api_key = openai_key
+    system_prompt = (
+        "Jesteś kreatywnym asystentem, który pomaga tworzyć szczegółowe opisy do kolorowanek dla dzieci. "
+        "Twoim zadaniem jest wziąć temat i ogólny opis od użytkownika i przekształcić go w bardziej barwny, "
+        "szczegółowy i konkretny opis sceny, który będzie idealny dla generatora obrazów AI. "
+        "Opis powinien być prosty do zrozumienia dla dziecka i łatwy do narysowania. "
+        "Zawsze zwracaj tylko i wyłącznie ulepszony opis, bez żadnych dodatkowych komentarzy. "
+        "Przykład: Użytkownik: Temat=\"Zwierzęta\", Opis=\"kot\" "
+        "Ty: 'Uroczy, puszysty kotek z dużymi oczami bawi się kłębkiem wełny na miękkim dywanie w przytulnym pokoju.'"
+    )
+    user_prompt = f"Temat: '{theme_val}', Opis: '{desc_val}'"
     try:
-        openai.api_key = api_key
-        system_prompt = """
-        Jesteś kreatywnym asystentem, który pomaga tworzyć szczegółowe opisy do kolorowanek dla dzieci.
-        Twoim zadaniem jest wziąć temat i ogólny opis od użytkownika i przekształcić go w bardziej barwny,
-        szczegółowy i konkretny opis sceny, który będzie idealny dla generatora obrazów AI.
-        Opis powinien być prosty do zrozumienia dla dziecka i łatwy do narysowania.
-        Zawsze zwracaj tylko i wyłącznie ulepszony opis, bez żadnych dodatkowych komentarzy.
-        Przykład:
-        Użytkownik: Temat="Zwierzęta", Opis="kot"
-        Ty: "Uroczy, puszysty kotek z dużymi oczami bawi się kłębkiem wełny na miękkim dywanie w przytulnym pokoju."
-        """
-        user_prompt = f"Temat: '{theme}', Opis: '{description}'"
-
         response = openai.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -48,14 +51,21 @@ def enhance_description_with_ai(theme, description, api_key):
             temperature=0.7,
             max_tokens=150
         )
-        enhanced_description = response.choices[0].message.content.strip()
-        return enhanced_description, None
-    except Exception as e:
-        return None, f"Błąd podczas ulepszania opisu: {e}"
+        choices = getattr(response, "choices", None)
+        if not choices or not choices[0].message or not getattr(choices[0].message, "content", None):
+            return None, "Błąd: Brak odpowiedzi z AI. Spróbuj ponownie."
+        enhanced_description = choices[0].message.content
+        if enhanced_description:
+            return enhanced_description.strip(), None
+        return None, "Błąd: Odpowiedź AI jest pusta."
+    except openai.OpenAIError as exc:
+        return None, f"Błąd OpenAI: {exc}"
+    except Exception as exc:
+        return None, f"Błąd podczas ulepszania opisu: {exc}"
 
-def generate_coloring_page_prompt(theme, description):
+def generate_coloring_page_prompt(theme_val, desc_val):
     """Generuje prompt dla DALL-E na podstawie tematu i opisu."""
-    prompt = (
+    prompt_text = (
         f"Stwórz stronę do kolorowania dla dzieci. Obrazek musi być wyłącznie czarno-biały, "
         f"z grubymi, wyraźnymi konturami na czystym białym tle. "
         f"Zabronione jest używanie jakichkolwiek kolorów, szarości, cieniowania, wypełnień, "
@@ -63,55 +73,76 @@ def generate_coloring_page_prompt(theme, description):
         f"Tylko kontury i linie. "
         f"Obrazek musi być w formacie poziomym, proporcje i kompozycja idealnie dopasowane do kartki A4 w układzie poziomym (297x210mm, 1792x1024px). "
         f"Wypełnij całą kartkę rysunkiem, nie zostawiaj pustych marginesów. "
-        f"Temat: {theme}. Opis: {description}. Styl: prosta kreskówka."
+        f"Temat: {theme_val}. Opis: {desc_val}. Styl: prosta kreskówka."
     )
-    return prompt
+    return prompt_text
 
-def generate_image(prompt, api_key):
+def generate_image(prompt_val, openai_key):
     """Generuje obraz za pomocą DALL-E."""
-    openai.api_key = api_key
+    openai.api_key = openai_key
     try:
         response = openai.images.generate(
             model="dall-e-3",
-            prompt=prompt,
+            prompt=prompt_val,
             size="1024x1024",  # Zmieniono na kwadratowy, obsługiwany rozmiar
             quality="standard",
             n=1,
         )
-        image_url = response.data[0].url
-        return image_url, None
-    except Exception as e:
-        return None, f"Błąd podczas generowania obrazu: {e}"
+        # Bezpieczne pobranie url
+        data = getattr(response, "data", None)
+        if not data or not data[0] or not getattr(data[0], "url", None):
+            return None, "Błąd: Brak obrazu z DALL-E. Spróbuj ponownie."
+        image_url_val = data[0].url
+        return image_url_val, None
+    except Exception as exc:
+        return None, f"Błąd podczas generowania obrazu: {exc}"
 
 def create_pdf(image_url):
     """Tworzy plik PDF z wygenerowanego obrazka w poziomym układzie A4."""
     try:
-        response = requests.get(image_url)
+        response = requests.get(image_url, timeout=10)
         img_data = BytesIO(response.content)
         # Zapisz obraz tymczasowo na dysku, bo FPDF nie obsługuje obiektów Pillow ani BytesIO
-        with Image.open(img_data) as image:
+        with Image.open(img_data) as img:
             temp_path = "temp_coloring.png"
-            image.save(temp_path, format="PNG")
+            img = img.convert("RGB")
+            # Przeskaluj do poziomego A4 (proporcje 297x210)
+            a4_ratio = 297 / 210
+            img_ratio = img.width / img.height
+            if img_ratio > a4_ratio:
+                # Obraz za szeroki – dopasuj wysokość
+                new_height = 1024
+                new_width = int(new_height * a4_ratio)
+            else:
+                # Obraz za wysoki – dopasuj szerokość
+                new_width = 1792
+                new_height = int(new_width / a4_ratio)
+            # Kompatybilność z różnymi wersjami Pillow
+            try:
+                resample_filter = Image.Resampling.LANCZOS
+            except AttributeError:
+                try:
+                    resample_filter = getattr(Image, "LANCZOS", None)
+                    if resample_filter is None:
+                        raise AttributeError
+                except AttributeError:
+                    resample_filter = 1  # 1 = LANCZOS w Pillow
+            img_resized = img.resize((new_width, new_height), resample_filter)
+            img_resized.save(temp_path, format="PNG")
 
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
         # Wymiary A4 poziomo: 297 x 210 mm
         page_width = 297
         page_height = 210
-        # Ustal szerokość i wysokość obrazu, aby zachować proporcje i nie wychodzić poza marginesy
-        img_width = page_width - 20  # 10 mm marginesu z każdej strony
-        img_height = page_height - 20
-        # Wstaw obraz na środek strony
-        x_pos = (page_width - img_width) / 2
-        y_pos = (page_height - img_height) / 2
-        pdf.image(temp_path, x=x_pos, y=y_pos, w=img_width, h=img_height)
-        # Usuń plik tymczasowy
+        # Wstaw obraz na całą stronę bez marginesów
+        pdf.image(temp_path, x=0, y=0, w=page_width, h=page_height)
         os.remove(temp_path)
-        # Zapis do bufora w pamięci
-        pdf_output = pdf.output(dest='S').encode('latin-1')
+        # FPDF.output(dest='S') zwraca już bytes (bytearray)
+        pdf_output = bytes(pdf.output(dest='S'))
         return pdf_output, None
-    except Exception as e:
-        return None, f"Błąd podczas tworzenia PDF: {e}"
+    except Exception as exc:
+        return None, f"Błąd podczas tworzenia PDF: {exc}"
 
 
 # --- Interfejs użytkownika Streamlit ---
@@ -206,9 +237,9 @@ if "image_url" in st.session_state:
 
     # Pobieranie PDF
     with st.spinner("Przygotowuję plik PDF..."):
-        pdf_bytes, error = create_pdf(st.session_state.image_url)
-        if error:
-            st.error(error)
+        pdf_bytes, pdf_error = create_pdf(st.session_state.image_url)
+        if pdf_error or not pdf_bytes:
+            st.error(pdf_error or "Nie udało się wygenerować pliku PDF.")
         else:
             st.download_button(
                 label="Pobierz jako PDF",
@@ -216,6 +247,5 @@ if "image_url" in st.session_state:
                 file_name=f"kolorowanka_{st.session_state.theme.replace(' ', '_')}.pdf",
                 mime="application/pdf"
             )
-    
     st.write("Nie jesteś zadowolony z wyniku? Zmień opis i wygeneruj ponownie.")
 
