@@ -55,7 +55,16 @@ def enhance_description_with_ai(theme, description, api_key):
 
 def generate_coloring_page_prompt(theme, description):
     """Generuje prompt dla DALL-E na podstawie tematu i opisu."""
-    prompt = f"Stwórz stronę do kolorowania dla dzieci. Obrazek musi być wyłącznie czarno-biały, z grubymi, wyraźnymi konturami na czystym białym tle. Bez cieni, bez odcieni szarości, bez żadnych kolorów. Temat: {theme}. Opis: {description}. Styl: prosta kreskówka."
+    prompt = (
+        f"Stwórz stronę do kolorowania dla dzieci. Obrazek musi być wyłącznie czarno-biały, "
+        f"z grubymi, wyraźnymi konturami na czystym białym tle. "
+        f"Zabronione jest używanie jakichkolwiek kolorów, szarości, cieniowania, wypełnień, "
+        f"gradientów, tekstur, półtonów i wszelkich odcieni innych niż czysta czerń i biel. "
+        f"Tylko kontury i linie. "
+        f"Obrazek musi być w formacie poziomym, proporcje i kompozycja idealnie dopasowane do kartki A4 w układzie poziomym (297x210mm, 1792x1024px). "
+        f"Wypełnij całą kartkę rysunkiem, nie zostawiaj pustych marginesów. "
+        f"Temat: {theme}. Opis: {description}. Styl: prosta kreskówka."
+    )
     return prompt
 
 def generate_image(prompt, api_key):
@@ -65,7 +74,7 @@ def generate_image(prompt, api_key):
         response = openai.images.generate(
             model="dall-e-3",
             prompt=prompt,
-            size="1024x1024",
+            size="1024x1024",  # Zmieniono na kwadratowy, obsługiwany rozmiar
             quality="standard",
             n=1,
         )
