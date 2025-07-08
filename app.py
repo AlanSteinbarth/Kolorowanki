@@ -1,5 +1,24 @@
 
-"""Aplikacja Streamlit do generowania kolorowanek AI (DALL-E 3, GPT-4o)."""
+
+# =============================================================
+# Generator Kolorowanek AI
+# Wersja: 1.0.0
+# Autor: Alan Steinbarth
+# Data: 2025-07-08
+# Opis: Aplikacja Streamlit do generowania czarno-białych kolorowanek
+#       z wykorzystaniem DALL-E 3 i GPT-4o (OpenAI).
+# =============================================================
+
+"""
+# Generator Kolorowanek AI
+#
+# Aplikacja Streamlit do generowania czarno-białych kolorowanek dla dzieci
+# na podstawie opisu tekstowego, z użyciem modeli OpenAI (DALL-E 3, GPT-4o).
+#
+# Autor: Alan Steinbarth
+# Wersja: 1.0.0
+# Repozytorium: https://github.com/AlanSteinbarth/Kolorowanki
+"""
 
 import os
 from io import BytesIO
@@ -11,13 +30,27 @@ import requests
 from PIL import Image
 
 
-# --- Konfiguracja ---
-load_dotenv()
 
-# --- Funkcje pomocnicze ---
+# =====================
+# KONFIGURACJA I IMPORTY
+# =====================
 
+load_dotenv()  # Wczytaj zmienne środowiskowe z pliku .env
+
+
+# =====================
+# FUNKCJE POMOCNICZE (AI, PDF, PROMPT)
+# =====================
+
+
+# Sprawdza poprawność klucza API OpenAI.
+# Zwraca (True, komunikat) jeśli OK, w przeciwnym razie (False, komunikat).
 def check_api_key(openai_key):
-    """Sprawdza poprawność klucza API OpenAI."""
+    """
+    Sprawdza poprawność klucza API OpenAI.
+    :param openai_key: Klucz API OpenAI
+    :return: (bool, str) - czy klucz jest poprawny, komunikat
+    """
     openai.api_key = openai_key
     try:
         openai.models.list()
@@ -28,8 +61,17 @@ def check_api_key(openai_key):
         return False, f"Wystąpił nieoczekiwany błąd: {exc}"
 
 
+
+# Ulepsza opis użytkownika za pomocą GPT-4o.
+# Zwraca (opis, None) lub (None, komunikat o błędzie).
 def enhance_description_with_ai(theme_val, desc_val, openai_key):
-    """Używa modelu językowego do wzbogacenia opisu użytkownika."""
+    """
+    Ulepsza opis użytkownika za pomocą GPT-4o.
+    :param theme_val: Temat kolorowanki
+    :param desc_val: Opis sceny
+    :param openai_key: Klucz API OpenAI
+    :return: (str lub None, str lub None)
+    """
     openai.api_key = openai_key
     system_prompt = (
         "Jesteś kreatywnym asystentem, który pomaga tworzyć szczegółowe opisy do kolorowanek dla dzieci. "
@@ -63,8 +105,16 @@ def enhance_description_with_ai(theme_val, desc_val, openai_key):
     except Exception as exc:
         return None, f"Błąd podczas ulepszania opisu: {exc}"
 
+
+# Generuje prompt dla DALL-E na podstawie tematu i opisu.
+# Zwraca gotowy prompt tekstowy.
 def generate_coloring_page_prompt(theme_val, desc_val):
-    """Generuje prompt dla DALL-E na podstawie tematu i opisu."""
+    """
+    Generuje prompt dla DALL-E na podstawie tematu i opisu.
+    :param theme_val: Temat kolorowanki
+    :param desc_val: Opis sceny
+    :return: str (prompt)
+    """
     prompt_text = (
         f"Stwórz stronę do kolorowania dla dzieci. Obrazek musi być wyłącznie czarno-biały, "
         f"z grubymi, wyraźnymi konturami na czystym białym tle. "
@@ -77,8 +127,16 @@ def generate_coloring_page_prompt(theme_val, desc_val):
     )
     return prompt_text
 
+
+# Generuje obraz za pomocą DALL-E 3 na podstawie promptu.
+# Zwraca (url, None) lub (None, komunikat o błędzie).
 def generate_image(prompt_val, openai_key):
-    """Generuje obraz za pomocą DALL-E."""
+    """
+    Generuje obraz za pomocą DALL-E 3 na podstawie promptu.
+    :param prompt_val: Prompt tekstowy
+    :param openai_key: Klucz API OpenAI
+    :return: (str lub None, str lub None)
+    """
     openai.api_key = openai_key
     try:
         response = openai.images.generate(
@@ -97,8 +155,15 @@ def generate_image(prompt_val, openai_key):
     except Exception as exc:
         return None, f"Błąd podczas generowania obrazu: {exc}"
 
+
+# Tworzy plik PDF z wygenerowanego obrazka w poziomym układzie A4.
+# Zwraca (bytes, None) lub (None, komunikat o błędzie).
 def create_pdf(image_url):
-    """Tworzy plik PDF z wygenerowanego obrazka w poziomym układzie A4."""
+    """
+    Tworzy plik PDF z wygenerowanego obrazka w poziomym układzie A4.
+    :param image_url: URL do obrazka
+    :return: (bytes lub None, str lub None)
+    """
     try:
         response = requests.get(image_url, timeout=10)
         img_data = BytesIO(response.content)
@@ -145,25 +210,35 @@ def create_pdf(image_url):
         return None, f"Błąd podczas tworzenia PDF: {exc}"
 
 
-# --- Interfejs użytkownika Streamlit ---
 
+# =====================
+# INTERFEJS UŻYTKOWNIKA STREAMLIT
+# =====================
+
+
+# Konfiguracja strony
 st.set_page_config(page_title="Generator Kolorowanek AI", layout="centered")
 
+
+# Nagłówek i opis
 st.title("🎨 Generator Kolorowanek AI")
 st.write('''
-Aplikacja do generowania kolorowanek dla dzieci przy wykorzystaniu AI. 
+Aplikacja do generowania kolorowanek dla dzieci przy wykorzystaniu AI (DALL-E 3, GPT-4o).
 ''')
+
 
 # --- Sidebar - Klucz API ---
 st.sidebar.header("Konfiguracja")
-api_key_input = st.sidebar.text_input("Klucz API OpenAI", type="password", help="Wpisz swój klucz API lub upewnij się, że jest w pliku .env")
-
+# Wprowadzenie klucza API OpenAI
+api_key_input = st.sidebar.text_input(
+    "Klucz API OpenAI", type="password",
+    help="Wpisz swój klucz API lub upewnij się, że jest w pliku .env"
+)
 api_key = api_key_input or os.getenv("OPENAI_API_KEY")
-
 if not api_key:
     st.warning("Wprowadź klucz API OpenAI w panelu bocznym, aby rozpocząć.")
     st.stop()
-
+# Weryfikacja klucza API
 is_key_valid, message = check_api_key(api_key)
 if is_key_valid:
     st.sidebar.success(message)
@@ -171,18 +246,27 @@ else:
     st.sidebar.error(message)
     st.stop()
 
-# --- Główny interfejs ---
+
+# =====================
+# GŁÓWNY INTERFEJS UŻYTKOWNIKA
+# =====================
+
+# Sekcja: Opis kolorowanki
 st.header("1. Opisz swoją kolorowankę")
 
-# Inicjalizacja stanu sesji
+# Inicjalizacja stanu sesji (opis i prompt)
 if 'description_text' not in st.session_state:
     st.session_state.description_text = ""
 if 'generated_prompt' not in st.session_state:
     st.session_state.generated_prompt = None
 
-theme = st.text_input("Temat kolorowanki", placeholder="np. leśne zwierzęta, pojazdy kosmiczne")
+# Pole: Temat kolorowanki
+theme = st.text_input(
+    "Temat kolorowanki",
+    placeholder="np. leśne zwierzęta, pojazdy kosmiczne"
+)
 
-# Pole tekstowe, którego zawartość jest kontrolowana przez stan sesji
+# Pole: Opis kolorowanki (kontrolowane przez stan sesji)
 description = st.text_area(
     "Co ma zawierać kolorowanka?",
     value=st.session_state.description_text,
@@ -190,11 +274,13 @@ description = st.text_area(
     key="description_area",
     height=250
 )
-st.session_state.description_text = description # Synchronizacja po ewentualnej edycji przez użytkownika
+st.session_state.description_text = description  # Synchronizacja po edycji
 
+# Przyciski: Ulepsz opis i Wygeneruj kolorowankę
 col1, col2 = st.columns(2)
 
 with col1:
+    # Ulepszanie opisu przez AI
     if st.button("Ulepsz opis ✨"):
         if not theme or not description:
             st.error("Wypełnij temat i opis, aby go ulepszyć.")
@@ -205,20 +291,19 @@ with col1:
                     st.error(error)
                 else:
                     st.session_state.description_text = enhanced_desc
-                    st.session_state.generated_prompt = None # Resetuj prompt po zmianie opisu
+                    st.session_state.generated_prompt = None  # Resetuj prompt po zmianie opisu
                     st.rerun()
 
 with col2:
+    # Generowanie kolorowanki przez AI
     if st.button("Wygeneruj kolorowankę 🎨"):
         if not theme or not description:
             st.error("Wypełnij temat i opis, aby wygenerować kolorowankę.")
         else:
             with st.spinner("Sztuczna inteligencja tworzy Twoją kolorowankę..."):
                 final_description = description
-                
                 prompt = generate_coloring_page_prompt(theme, final_description)
-                st.session_state.generated_prompt = prompt # Zapisz prompt do stanu sesji
-
+                st.session_state.generated_prompt = prompt  # Zapisz prompt do stanu sesji
                 image_url, error = generate_image(prompt, api_key)
                 if error:
                     st.error(error)
@@ -227,14 +312,14 @@ with col2:
                     st.session_state.theme = theme
                     st.rerun()
 
-# Wyświetlanie promptu w pełnej szerokości, jeśli istnieje
+# Sekcja: Wyświetlanie promptu
 if st.session_state.get('generated_prompt'):
     st.info(f"**Wygenerowany prompt:**\n{st.session_state.generated_prompt}")
 
+# Sekcja: Wyświetlanie i pobieranie kolorowanki
 if "image_url" in st.session_state:
     st.header("2. Twoja kolorowanka jest gotowa!")
     st.image(st.session_state.image_url, caption="Wygenerowana kolorowanka")
-
     # Pobieranie PDF
     with st.spinner("Przygotowuję plik PDF..."):
         pdf_bytes, pdf_error = create_pdf(st.session_state.image_url)
