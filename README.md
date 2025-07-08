@@ -1,3 +1,21 @@
+
+<!-- BADGES START -->
+<p align="left">
+  <a href="https://www.python.org/">
+    <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white" />
+  </a>
+  <a href="https://streamlit.io/">
+    <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-%23FF4B4B.svg?logo=streamlit&logoColor=white" />
+  </a>
+  <a href="https://platform.openai.com/">
+    <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-API-10a37f?logo=openai&logoColor=white" />
+  </a>
+  <a href="LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/AlanSteinbarth/Kolorowanki?color=blue" />
+  </a>
+</p>
+<!-- BADGES END -->
+
 # Generator Kolorowanek AI
 
 Aplikacja Streamlit do generowania czarno-białych kolorowanek dla dzieci z wykorzystaniem modeli OpenAI (DALL-E 3 oraz GPT-4o).
