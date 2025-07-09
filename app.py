@@ -306,7 +306,7 @@ with col1:
 
 with col2:
     # Generowanie kolorowanki przez AI
-    if st.button("Wygeneruj kolorowankę 🎨"):
+    if st.button("Wygeneruj kolorowankę 🖍️"):
         if not theme or not description:
             st.error("Wypełnij temat i opis, aby wygenerować kolorowankę.")
         else:

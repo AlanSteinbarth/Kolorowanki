@@ -44,39 +44,45 @@ Ten projekt umożliwia każdemu użytkownikowi szybkie tworzenie oryginalnych ko
 - **Ulepszanie opisu przez AI** – jedno kliknięcie i Twój pomysł staje się bardziej szczegółowy, ale bez zbędnych kolorów, dźwięków i zapachów.
 - **Plik PDF gotowy do druku** – idealny do domowego użytku, zajęć edukacyjnych lub prezentu.
 
-## Jak uruchomić?
-1. Sklonuj repozytorium:
-   ```bash
-   git clone https://github.com/AlanSteinbarth/Kolorowanki.git
-   cd Kolorowanki
-   ```
-2. Zainstaluj wymagane biblioteki:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Utwórz plik `.env` i dodaj swój klucz API OpenAI:
-   ```env
-   OPENAI_API_KEY=sk-...
-   ```
-4. Uruchom aplikację:
-   ```bash
-   streamlit run app.py
-   ```
 
+## Jak uruchomić?
+
+Możesz skorzystać z aplikacji na dwa sposoby:
+
+1. **Bezpośrednio online:**
+   - Kliknij i uruchom bez instalacji: [pokolorujmnie.streamlit.app](https://pokolorujmnie.streamlit.app/)
+
+2. **Lokalnie z repozytorium:**
+   - Sklonuj repozytorium:
+     ```bash
+     git clone https://github.com/AlanSteinbarth/Kolorowanki.git
+     cd Kolorowanki
+     ```
+   - Zainstaluj wymagane biblioteki:
+     ```bash
+     pip install -r requirements.txt
+     ```
+   - Utwórz plik `.env` i dodaj swój klucz API OpenAI:
+     ```env
+     OPENAI_API_KEY=sk-...
+     ```
+   - Uruchom aplikację:
+     ```bash
+     streamlit run app.py
+     ```
+
+
+
+## Bezpieczeństwo
+
+- Twój klucz API OpenAI **nie jest nigdzie zapisywany ani przechowywany** przez aplikację – jest używany wyłącznie w bieżącej sesji do komunikacji z API OpenAI.
+- Aplikacja nie przesyła, nie loguje i nie udostępnia klucza osobom trzecim.
+- Pamięć podręczna Streamlit (stan sesji) jest czyszczona po zamknięciu przeglądarki lub odświeżeniu aplikacji.
+- Zalecamy nie udostępniać swojego klucza API innym osobom i nie commitować pliku `.env` do repozytorium.
 
 ## Wkład i licencja
 
 Projekt na licencji MIT. Chcesz zgłosić błąd lub dodać funkcję? Zajrzyj do pliku [CONTRIBUTING.md](CONTRIBUTING.md)!
-
-## Portfolio
-Ten projekt jest częścią mojego portfolio programistycznego. Pokazuje praktyczne wykorzystanie AI, integrację z API, obsługę PDF oraz projektowanie prostych, użytecznych interfejsów w Pythonie.
-
-Zachęcam do kontaktu i współpracy!
-
----
-Autor: Alan Steinbarth
-
----
 
 ## Zrzuty ekranu
 
@@ -108,9 +114,10 @@ Autor: Alan Steinbarth
   <br><i>Komunikat o braku klucza API – aplikacja nie pozwala przejść dalej bez klucza.</i>
 </div>
 
-## Bezpieczeństwo
+## Portfolio
+Ten projekt jest częścią mojego portfolio programistycznego. Pokazuje praktyczne wykorzystanie AI, integrację z API, obsługę PDF oraz projektowanie prostych, użytecznych interfejsów w Pythonie.
 
-- Twój klucz API OpenAI **nie jest nigdzie zapisywany ani przechowywany** przez aplikację – jest używany wyłącznie w bieżącej sesji do komunikacji z API OpenAI.
-- Aplikacja nie przesyła, nie loguje i nie udostępnia klucza osobom trzecim.
-- Pamięć podręczna Streamlit (stan sesji) jest czyszczona po zamknięciu przeglądarki lub odświeżeniu aplikacji.
-- Zalecamy nie udostępniać swojego klucza API innym osobom i nie commitować pliku `.env` do repozytorium.
+Zachęcam do kontaktu i współpracy!
+
+---
+Autor: Alan Steinbarth
