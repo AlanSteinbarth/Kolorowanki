@@ -86,12 +86,6 @@ Projekt na licencji MIT. Chcesz zgłosić błąd lub dodać funkcję? Zajrzyj do
 
 ## Zrzuty ekranu
 
-<div align="center">
-  <a href="screenshots/kolorowanka_Samochody_wyścigowe.pdf">
-    <img src="screenshots/gotowa_kolorowanka.png" width="600" alt="Podgląd pliku PDF z kolorowanką"/>
-  </a>
-  <br><i>Podgląd finalnego pliku PDF z kolorowanką. Kliknij, aby pobrać przykładowy PDF.</i>
-</div>
 
 <div align="center">
   <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.54.12.png" width="600" alt="Panel boczny i komunikat o poprawnym kluczu API"/>
@@ -112,6 +106,12 @@ Projekt na licencji MIT. Chcesz zgłosić błąd lub dodać funkcję? Zajrzyj do
 <div align="center">
   <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.56.04.png" width="600" alt="Brak klucza API"/>
   <br><i>Komunikat o braku klucza API – aplikacja nie pozwala przejść dalej bez klucza.</i>
+</div>
+<div align="center">
+  <a href="screenshots/kolorowanka_Samochody_wyścigowe.pdf">
+    <img src="screenshots/gotowa_kolorowanka.png" width="600" alt="Podgląd pliku PDF z kolorowanką"/>
+  </a>
+  <br><i>Podgląd finalnego pliku PDF z kolorowanką. Kliknij, aby pobrać przykładowy PDF.</i>
 </div>
 
 ## Portfolio
