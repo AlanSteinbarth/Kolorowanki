@@ -1,23 +1,31 @@
-
-
 # =============================================================
 # Generator Kolorowanek AI
-# Wersja: 1.0.0
-# Autor: Alan Steinbarth
-# Data: 2025-07-08
-# Opis: Aplikacja Streamlit do generowania czarno-białych kolorowanek
-#       z wykorzystaniem DALL-E 3 i GPT-4o (OpenAI).
+# Wersja: 1.1.0
+# Data: 2025-07-09
+# Opis: Nowa wersja aplikacji Streamlit do generowania czarno-białych kolorowanek
+#       z wykorzystaniem DALL-E 3 i GPT-4o (OpenAI). Poprawki promptów, PDF, dokumentacji.
 # =============================================================
 
 """
-# Generator Kolorowanek AI
-#
-# Aplikacja Streamlit do generowania czarno-białych kolorowanek dla dzieci
-# na podstawie opisu tekstowego, z użyciem modeli OpenAI (DALL-E 3, GPT-4o).
-#
-# Autor: Alan Steinbarth
-# Wersja: 1.0.0
-# Repozytorium: https://github.com/AlanSteinbarth/Kolorowanki
+Generator Kolorowanek AI
+========================
+
+Aplikacja Streamlit do generowania czarno-białych kolorowanek dla dzieci na podstawie opisu tekstowego,
+z wykorzystaniem modeli OpenAI (DALL-E 3, GPT-4o).
+
+Autor: Alan Steinbarth
+Wersja: 1.1.0
+Data: 2025-07-09
+Repozytorium: https://github.com/AlanSteinbarth/Kolorowanki
+Licencja: MIT
+
+Główne funkcje:
+- Ulepszanie opisu przez GPT-4o (bez kolorów, dźwięków, zapachów)
+- Generowanie promptu do DALL-E 3 (czarno-biały line art)
+- Generowanie obrazu (1024x1024 px) i osadzanie go na białym tle A4 (PDF, poziomo)
+- Pobieranie gotowego PDF bez marginesów
+
+Wymagania: Python 3.10+, klucz OpenAI API
 """
 
 import os
@@ -335,4 +343,8 @@ if "image_url" in st.session_state:
                 mime="application/pdf"
             )
     st.write("Nie jesteś zadowolony z wyniku? Zmień opis i wygeneruj ponownie.")
+
+# =====================
+# Autor: Alan Steinbarth
+# =====================
 
