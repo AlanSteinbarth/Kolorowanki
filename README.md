@@ -116,7 +116,9 @@ Projekt na licencji MIT. Chcesz zgłosić błąd lub dodać funkcję? Zajrzyj do
 </div>
 
 ## Portfolio
-Ten projekt jest częścią mojego portfolio programistycznego. Pokazuje praktyczne wykorzystanie AI, integrację z API, obsługę PDF oraz projektowanie prostych, użytecznych interfejsów w Pythonie.
+
+Ten projekt powstał dla moich dzieci, które bardzo nudziły się podczas deszczu. Prosiły, abym wydrukował im jakąś kolorowankę z internetu, a ja nie mogłem znaleść zadnej fajnej.
+Dodatkowo, projekt jest częścią mojego portfolio programistycznego. Pokazuje praktyczne wykorzystanie AI, integrację z API, obsługę PDF oraz projektowanie prostych, użytecznych interfejsów w Pythonie.
 
 Zachęcam do kontaktu i współpracy!
 
