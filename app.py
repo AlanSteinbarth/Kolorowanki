@@ -277,7 +277,7 @@ description = st.text_area(
     value=st.session_state.description_text,
     placeholder="np. uśmiechnięty lew bawiący się piłką w dżungli",
     key="description_area",
-    height=250,
+    height=195,  # pośrednia wysokość
     # brak ograniczenia znaków
 )
 st.session_state.description_text = description  # Synchronizacja po edycji
