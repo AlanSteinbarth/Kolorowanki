@@ -13,6 +13,16 @@ Generator Kolorowanek AI
 Aplikacja Streamlit do generowania czarno-białych kolorowanek dla dzieci na podstawie opisu tekstowego,
 z wykorzystaniem modeli OpenAI (DALL-E 3, GPT-4o).
 
+Spis treści:
+1. Opis projektu
+2. Wymagania
+3. Funkcje
+4. Instalacja i uruchomienie
+5. Użycie aplikacji
+6. Bezpieczeństwo
+7. Licencja
+8. Autor
+
 Autor: Alan Steinbarth
 Wersja: 1.1.0
 Data: 2025-07-09
@@ -56,8 +66,16 @@ load_dotenv()  # Wczytaj zmienne środowiskowe z pliku .env
 def check_api_key(openai_key):
     """
     Sprawdza poprawność klucza API OpenAI.
-    :param openai_key: Klucz API OpenAI
-    :return: (bool, str) - czy klucz jest poprawny, komunikat
+
+    Parameters
+    ----------
+    openai_key : str
+        Klucz API OpenAI.
+
+    Returns
+    -------
+    tuple of (bool, str)
+        Czy klucz jest poprawny, komunikat.
     """
     openai.api_key = openai_key
     try:
@@ -75,10 +93,20 @@ def check_api_key(openai_key):
 def enhance_description_with_ai(theme_val, desc_val, openai_key):
     """
     Ulepsza opis użytkownika za pomocą GPT-4o.
-    :param theme_val: Temat kolorowanki
-    :param desc_val: Opis sceny
-    :param openai_key: Klucz API OpenAI
-    :return: (str lub None, str lub None)
+
+    Parameters
+    ----------
+    theme_val : str
+        Temat kolorowanki.
+    desc_val : str
+        Opis sceny.
+    openai_key : str
+        Klucz API OpenAI.
+
+    Returns
+    -------
+    tuple of (str or None, str or None)
+        Ulepszony opis lub komunikat o błędzie.
     """
     openai.api_key = openai_key
     system_prompt = (
@@ -121,9 +149,18 @@ def enhance_description_with_ai(theme_val, desc_val, openai_key):
 def generate_coloring_page_prompt(theme_val, desc_val):
     """
     Generuje minimalistyczny prompt dla DALL-E na podstawie tematu i opisu.
-    :param theme_val: Temat kolorowanki
-    :param desc_val: Opis sceny
-    :return: str (prompt)
+
+    Parameters
+    ----------
+    theme_val : str
+        Temat kolorowanki.
+    desc_val : str
+        Opis sceny.
+
+    Returns
+    -------
+    str
+        Gotowy prompt tekstowy.
     """
     prompt_text = (
         f"Create a black-and-white line art illustration for a children’s coloring page. "
@@ -139,9 +176,18 @@ def generate_coloring_page_prompt(theme_val, desc_val):
 def generate_image(prompt_val, openai_key):
     """
     Generuje obraz za pomocą DALL-E 3 na podstawie promptu (1024x1024 px).
-    :param prompt_val: Prompt tekstowy
-    :param openai_key: Klucz API OpenAI
-    :return: (str lub None, str lub None)
+
+    Parameters
+    ----------
+    prompt_val : str
+        Prompt tekstowy.
+    openai_key : str
+        Klucz API OpenAI.
+
+    Returns
+    -------
+    tuple of (str or None, str or None)
+        URL obrazka lub komunikat o błędzie.
     """
     openai.api_key = openai_key
     try:
@@ -155,8 +201,8 @@ def generate_image(prompt_val, openai_key):
         data = getattr(response, "data", None)
         if not data or not data[0] or not getattr(data[0], "url", None):
             return None, "Błąd: Brak obrazu z DALL-E. Spróbuj ponownie."
-        image_url_val = data[0].url
-        return image_url_val, None
+        image_url = data[0].url
+        return image_url, None
     except Exception as exc:
         return None, f"Błąd podczas generowania obrazu: {exc}"
 
@@ -166,48 +212,43 @@ def generate_image(prompt_val, openai_key):
 def create_pdf(image_url):
     """
     Tworzy plik PDF z wygenerowanego obrazka, umieszczając go na białym tle A4 (poziomo, 300 DPI).
-    :param image_url: URL do obrazka
-    :return: (bytes lub None, str lub None)
+
+    Parameters
+    ----------
+    image_url : str
+        URL do obrazka.
+
+    Returns
+    -------
+    tuple of (bytes or None, str or None)
+        PDF jako bytes lub komunikat o błędzie.
     """
     try:
         response = requests.get(image_url, timeout=10)
         img_data = BytesIO(response.content)
         with Image.open(img_data) as img:
             img = img.convert("RGB")
-            # Ustawienia A4 poziomo w pikselach (300 DPI): 3508x2480
-            a4_w, a4_h = 3508, 2480
+            a4_w, a4_h = 3508, 2480  # 300 DPI
             canvas = Image.new("RGB", (a4_w, a4_h), "white")
-            # Przeskaluj wygenerowany kwadrat, by wypełnił możliwie szeroko:
             w, h = img.size
             new_w = a4_w
             new_h = int(h * (a4_w / w))
-            # Ustal odpowiedni filtr resamplingu (kompatybilność z różnymi wersjami Pillow)
-            try:
-                resample_filter = Image.Resampling.LANCZOS
-            except AttributeError:
-                try:
-                    resample_filter = getattr(Image, "LANCZOS", None)
-                    if resample_filter is None:
-                        raise AttributeError
-                except AttributeError:
-                    resample_filter = 1  # 1 = LANCZOS w Pillow
+            # Ustal odpowiedni filtr resamplingu
+            resample_filter = getattr(getattr(Image, "Resampling", Image), "LANCZOS", 1)
             if new_h < a4_h:
                 resized = img.resize((new_w, new_h), resample_filter)
             else:
                 new_h = a4_h
                 new_w = int(w * (a4_h / h))
                 resized = img.resize((new_w, new_h), resample_filter)
-            # Wycentruj na białym tle
             x = (a4_w - resized.width) // 2
             y = (a4_h - resized.height) // 2
             canvas.paste(resized, (x, y))
-            # Zapisz do pliku tymczasowego
             temp_path = "temp_coloring.png"
             canvas.save(temp_path, format="PNG")
 
         pdf = FPDF(orientation="L", unit="mm", format="A4")
         pdf.add_page()
-        # Wymiary A4 poziomo: 297 x 210 mm
         pdf.image(temp_path, x=0, y=0, w=297, h=210)
         os.remove(temp_path)
         pdf_str = pdf.output(dest='S')
@@ -216,6 +257,10 @@ def create_pdf(image_url):
         else:
             pdf_output = pdf_str
         return pdf_output, None
+    except requests.RequestException as exc:
+        return None, f"Błąd pobierania obrazka: {exc}"
+    except OSError as exc:
+        return None, f"Błąd przetwarzania obrazka: {exc}"
     except Exception as exc:
         return None, f"Błąd podczas tworzenia PDF: {exc}"
 
