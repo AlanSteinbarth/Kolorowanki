@@ -20,17 +20,13 @@
 # Repozytorium: https://github.com/AlanSteinbarth/Kolorowanki
 """
 
-
-
 import os
-import tempfile
 from io import BytesIO
-
-import requests
 import streamlit as st
 import openai
 from dotenv import load_dotenv
 from fpdf import FPDF
+import requests
 from PIL import Image
 
 
@@ -49,7 +45,7 @@ load_dotenv()  # Wczytaj zmienne środowiskowe z pliku .env
 
 # Sprawdza poprawność klucza API OpenAI.
 # Zwraca (True, komunikat) jeśli OK, w przeciwnym razie (False, komunikat).
-def check_api_key(openai_key: str) -> tuple[bool, str]:
+def check_api_key(openai_key):
     """
     Sprawdza poprawność klucza API OpenAI.
     :param openai_key: Klucz API OpenAI
@@ -61,14 +57,14 @@ def check_api_key(openai_key: str) -> tuple[bool, str]:
         return True, "Klucz API jest poprawny."
     except openai.AuthenticationError:
         return False, "Błąd uwierzytelniania. Sprawdź swój klucz API."
-    except Exception as exc:  # pylint: disable=broad-except
+    except Exception as exc:
         return False, f"Wystąpił nieoczekiwany błąd: {exc}"
 
 
 
 # Ulepsza opis użytkownika za pomocą GPT-4o.
 # Zwraca (opis, None) lub (None, komunikat o błędzie).
-def enhance_description_with_ai(theme_val: str, desc_val: str, openai_key: str) -> tuple[str | None, str | None]:
+def enhance_description_with_ai(theme_val, desc_val, openai_key):
     """
     Ulepsza opis użytkownika za pomocą GPT-4o.
     :param theme_val: Temat kolorowanki
@@ -83,6 +79,7 @@ def enhance_description_with_ai(theme_val: str, desc_val: str, openai_key: str) 
         "szczegółowy i konkretny opis sceny, który będzie idealny dla generatora obrazów AI. "
         "Opis powinien być prosty do zrozumienia dla dziecka i łatwy do narysowania. "
         "Zawsze zwracaj tylko i wyłącznie ulepszony opis, bez żadnych dodatkowych komentarzy. "
+        "Jeśli zabraknie miejsca na odpowiedź, zakończ ją pełnym zdaniem, nie urywaj w połowie słowa. "
         "Przykład: Użytkownik: Temat=\"Zwierzęta\", Opis=\"kot\" "
         "Ty: 'Uroczy, puszysty kotek z dużymi oczami bawi się kłębkiem wełny na miękkim dywanie w przytulnym pokoju.'"
     )
@@ -95,7 +92,7 @@ def enhance_description_with_ai(theme_val: str, desc_val: str, openai_key: str) 
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.7,
-            max_tokens=150
+            max_tokens=300  # zwiększono limit tokenów
         )
         choices = getattr(response, "choices", None)
         if not choices or not choices[0].message or not getattr(choices[0].message, "content", None):
@@ -106,13 +103,13 @@ def enhance_description_with_ai(theme_val: str, desc_val: str, openai_key: str) 
         return None, "Błąd: Odpowiedź AI jest pusta."
     except openai.OpenAIError as exc:
         return None, f"Błąd OpenAI: {exc}"
-    except Exception as exc:  # pylint: disable=broad-except
+    except Exception as exc:
         return None, f"Błąd podczas ulepszania opisu: {exc}"
 
 
 # Generuje prompt dla DALL-E na podstawie tematu i opisu.
 # Zwraca gotowy prompt tekstowy.
-def generate_coloring_page_prompt(theme_val: str, desc_val: str) -> str:
+def generate_coloring_page_prompt(theme_val, desc_val):
     """
     Generuje prompt dla DALL-E na podstawie tematu i opisu.
     :param theme_val: Temat kolorowanki
@@ -134,7 +131,7 @@ def generate_coloring_page_prompt(theme_val: str, desc_val: str) -> str:
 
 # Generuje obraz za pomocą DALL-E 3 na podstawie promptu.
 # Zwraca (url, None) lub (None, komunikat o błędzie).
-def generate_image(prompt_val: str, openai_key: str) -> tuple[str | None, str | None]:
+def generate_image(prompt_val, openai_key):
     """
     Generuje obraz za pomocą DALL-E 3 na podstawie promptu.
     :param prompt_val: Prompt tekstowy
@@ -142,80 +139,79 @@ def generate_image(prompt_val: str, openai_key: str) -> tuple[str | None, str | 
     :return: (str lub None, str lub None)
     """
     openai.api_key = openai_key
-    # Walidacja promptu
-    if not prompt_val or len(prompt_val.strip()) < 30:
-        return None, "Prompt jest zbyt krótki lub pusty. Opisz dokładniej swoją kolorowankę."
     try:
         response = openai.images.generate(
             model="dall-e-3",
             prompt=prompt_val,
-            size="1024x1024",
+            size="1024x1024",  # Zmieniono na kwadratowy, obsługiwany rozmiar
             quality="standard",
             n=1,
         )
+        # Bezpieczne pobranie url
         data = getattr(response, "data", None)
         if not data or not data[0] or not getattr(data[0], "url", None):
             return None, "Błąd: Brak obrazu z DALL-E. Spróbuj ponownie."
         image_url_val = data[0].url
         return image_url_val, None
-    except openai.OpenAIError as exc:
-        return None, f"Błąd OpenAI: {exc}"
-    except requests.RequestException as exc:
-        return None, f"Błąd sieci: {exc}"
-    except Exception as exc:  # pylint: disable=broad-except
+    except Exception as exc:
         return None, f"Błąd podczas generowania obrazu: {exc}"
 
 
 # Tworzy plik PDF z wygenerowanego obrazka w poziomym układzie A4.
 # Zwraca (bytes, None) lub (None, komunikat o błędzie).
-def create_pdf(img_url: str) -> tuple[bytes | None, str | None]:
+def create_pdf(image_url):
     """
     Tworzy plik PDF z wygenerowanego obrazka w poziomym układzie A4.
-    :param img_url: URL do obrazka
+    :param image_url: URL do obrazka
     :return: (bytes lub None, str lub None)
     """
     try:
-        response = requests.get(img_url, timeout=10)
+        response = requests.get(image_url, timeout=10)
         img_data = BytesIO(response.content)
+        # Zapisz obraz tymczasowo na dysku, bo FPDF nie obsługuje obiektów Pillow ani BytesIO
         with Image.open(img_data) as img:
+            temp_path = "temp_coloring.png"
             img = img.convert("RGB")
+            # Przeskaluj do poziomego A4 (proporcje 297x210)
             a4_ratio = 297 / 210
             img_ratio = img.width / img.height
             if img_ratio > a4_ratio:
+                # Obraz za szeroki – dopasuj wysokość
                 new_height = 1024
                 new_width = int(new_height * a4_ratio)
             else:
+                # Obraz za wysoki – dopasuj szerokość
                 new_width = 1792
                 new_height = int(new_width / a4_ratio)
+            # Kompatybilność z różnymi wersjami Pillow
             try:
                 resample_filter = Image.Resampling.LANCZOS
-            except AttributeError as exc:
+            except AttributeError:
                 try:
                     resample_filter = getattr(Image, "LANCZOS", None)
                     if resample_filter is None:
-                        raise AttributeError from exc
+                        raise AttributeError
                 except AttributeError:
-                    resample_filter = 1
+                    resample_filter = 1  # 1 = LANCZOS w Pillow
             img_resized = img.resize((new_width, new_height), resample_filter)
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-                temp_path = tmp_file.name
-                img_resized.save(temp_path, format="PNG")
+            img_resized.save(temp_path, format="PNG")
 
         pdf = FPDF(orientation='L', unit='mm', format='A4')
         pdf.add_page()
+        # Wymiary A4 poziomo: 297 x 210 mm
         page_width = 297
         page_height = 210
+        # Wstaw obraz na całą stronę bez marginesów
         pdf.image(temp_path, x=0, y=0, w=page_width, h=page_height)
         os.remove(temp_path)
-        pdf_raw = pdf.output(dest='S')
-        if isinstance(pdf_raw, str):
-            pdf_output = pdf_raw.encode('latin1')
-        elif isinstance(pdf_raw, (bytes, bytearray)):
-            pdf_output = bytes(pdf_raw)
+        # FPDF.output(dest='S') może zwracać str (wtedy trzeba zakodować na bytes)
+        pdf_str = pdf.output(dest='S')
+        if isinstance(pdf_str, str):
+            pdf_output = pdf_str.encode('latin1')  # FPDF używa latin1
         else:
-            return None, "Nieoczekiwany format danych PDF."
+            pdf_output = pdf_str
         return pdf_output, None
-    except Exception as exc:  # pylint: disable=broad-except
+    except Exception as exc:
         return None, f"Błąd podczas tworzenia PDF: {exc}"
 
 
@@ -229,13 +225,11 @@ def create_pdf(img_url: str) -> tuple[bytes | None, str | None]:
 st.set_page_config(page_title="Generator Kolorowanek AI", layout="centered")
 
 
-
 # Nagłówek i opis
 st.title("🎨 Generator Kolorowanek AI")
 st.write('''
 Aplikacja do generowania kolorowanek dla dzieci przy wykorzystaniu AI (DALL-E 3, GPT-4o).
 ''')
-
 
 
 # --- Sidebar - Klucz API ---
@@ -283,16 +277,16 @@ description = st.text_area(
     value=st.session_state.description_text,
     placeholder="np. uśmiechnięty lew bawiący się piłką w dżungli",
     key="description_area",
-    height=250
+    height=250,
+    # brak ograniczenia znaków
 )
 st.session_state.description_text = description  # Synchronizacja po edycji
 
 # Przyciski: Ulepsz opis i Wygeneruj kolorowankę
+col1, col2 = st.columns(2)
 
-# Przyciski: Ulepsz opis (lewo) i Wygeneruj kolorowankę (prawo)
-left_col, spacer, right_col = st.columns([1, 2, 1])
-
-with left_col:
+with col1:
+    # Ulepszanie opisu przez AI
     if st.button("Ulepsz opis ✨"):
         if not theme or not description:
             st.error("Wypełnij temat i opis, aby go ulepszyć.")
@@ -303,10 +297,11 @@ with left_col:
                     st.error(error)
                 else:
                     st.session_state.description_text = enhanced_desc
-                    st.session_state.generated_prompt = None
+                    st.session_state.generated_prompt = None  # Resetuj prompt po zmianie opisu
                     st.rerun()
 
-with right_col:
+with col2:
+    # Generowanie kolorowanki przez AI
     if st.button("Wygeneruj kolorowankę 🎨"):
         if not theme or not description:
             st.error("Wypełnij temat i opis, aby wygenerować kolorowankę.")
@@ -314,7 +309,7 @@ with right_col:
             with st.spinner("Sztuczna inteligencja tworzy Twoją kolorowankę..."):
                 final_description = description
                 prompt = generate_coloring_page_prompt(theme, final_description)
-                st.session_state.generated_prompt = prompt
+                st.session_state.generated_prompt = prompt  # Zapisz prompt do stanu sesji
                 image_url, error = generate_image(prompt, api_key)
                 if error:
                     st.error(error)
