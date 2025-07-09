@@ -1,3 +1,41 @@
+<p align="center">
+  <a href="screenshots/kolorowanka_Samochody_wyścigowe.pdf" target="_blank">
+    <img src="screenshots/gotowa_kolorowanka.png" width="600" alt="Podgląd pliku PDF z kolorowanką"/>
+  </a>
+  <br><i>Podgląd finalnego pliku PDF z kolorowanką. Kliknij, aby pobrać przykładowy PDF.</i>
+</p>
+## Zrzuty ekranu
+
+<p align="center">
+  <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.54.12.png" width="600" alt="Panel boczny i komunikat o poprawnym kluczu API"/>
+  <br><i>Panel boczny z polem na klucz API oraz komunikat o poprawnym kluczu.</i>
+</p>
+<p align="center">
+  <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.54.31.png" width="600" alt="Wygenerowana kolorowanka - samochody wyścigowe"/>
+  <br><i>Wygenerowana kolorowanka (samochody wyścigowe) – podgląd i pobieranie PDF.</i>
+</p>
+<p align="center">
+  <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.55.03.png" width="600" alt="Ulepszony opis przez AI"/>
+  <br><i>Przykład ulepszonego opisu przez AI na podstawie prostego opisu użytkownika.</i>
+</p>
+<p align="center">
+  <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.55.22.png" width="600" alt="Pusty formularz startowy"/>
+  <br><i>Początkowy widok aplikacji – puste pola do wpisania tematu i opisu kolorowanki.</i>
+</p>
+<p align="center">
+  <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.56.04.png" width="600" alt="Brak klucza API"/>
+  <br><i>Komunikat o braku klucza API – aplikacja nie pozwala przejść dalej bez klucza.</i>
+</p>
+<p align="center">
+  <img src="screenshots/gotowa_kolorowanka.png" width="600" alt="Przykładowa wygenerowana kolorowanka"/>
+  <br><i>Przykładowa wygenerowana kolorowanka (podgląd pliku PDF).</i>
+</p>
+## Bezpieczeństwo
+
+- Twój klucz API OpenAI **nie jest nigdzie zapisywany ani przechowywany** przez aplikację – jest używany wyłącznie w bieżącej sesji do komunikacji z API OpenAI.
+- Aplikacja nie przesyła, nie loguje i nie udostępnia klucza osobom trzecim.
+- Pamięć podręczna Streamlit (stan sesji) jest czyszczona po zamknięciu przeglądarki lub odświeżeniu aplikacji.
+- Zalecamy nie udostępniać swojego klucza API innym osobom i nie commitować pliku `.env` do repozytorium.
 
 <!-- BADGES START -->
 <p align="left">
@@ -16,22 +54,32 @@
 </p>
 <!-- BADGES END -->
 
+
 # Generator Kolorowanek AI
 
 Aplikacja Streamlit do generowania czarno-białych kolorowanek dla dzieci z wykorzystaniem modeli OpenAI (DALL-E 3 oraz GPT-4o).
 
+---
+**Wersja:** 1.1.0  
+**Data:** 2025-07-09  
+**Licencja:** MIT  
+**Repozytorium:** https://github.com/AlanSteinbarth/Kolorowanki
+---
+
+
 ## Opis projektu
 
 Ten projekt umożliwia każdemu użytkownikowi szybkie tworzenie oryginalnych kolorowanek na podstawie własnego pomysłu. Wystarczy podać temat i krótki opis sceny, a aplikacja:
-- opcjonalnie ulepszy opis za pomocą GPT-4o,
+- opcjonalnie ulepszy opis za pomocą GPT-4o (bez kolorów, dźwięków, zapachów),
 - wygeneruje prompt i przekaże go do DALL-E 3,
-- stworzy czarno-biały, panoramiczny rysunek do kolorowania,
-- umożliwi pobranie gotowej kolorowanki w formacie PDF (A4 poziomo, bez marginesów).
+- stworzy czarno-biały rysunek do kolorowania (line art, 1024x1024),
+- osadzi rysunek na białym tle A4 (poziomo, PDF, bez marginesów),
+- umożliwi pobranie gotowej kolorowanki w formacie PDF.
 
 ## Najważniejsze cechy
 - **Czysto czarno-białe rysunki** – bez cieni, szarości, kolorów, wypełnień i marginesów.
 - **Prosty, funkcjonalny interfejs** – tylko to, co potrzebne do generowania i pobierania kolorowanek.
-- **Ulepszanie opisu przez AI** – jedno kliknięcie i Twój pomysł staje się bardziej szczegółowy i inspirujący.
+- **Ulepszanie opisu przez AI** – jedno kliknięcie i Twój pomysł staje się bardziej szczegółowy, ale bez zbędnych kolorów, dźwięków i zapachów.
 - **Plik PDF gotowy do druku** – idealny do domowego użytku, zajęć edukacyjnych lub prezentu.
 
 ## Jak uruchomić?
@@ -52,6 +100,11 @@ Ten projekt umożliwia każdemu użytkownikowi szybkie tworzenie oryginalnych ko
    ```bash
    streamlit run app.py
    ```
+
+
+## Wkład i licencja
+
+Projekt na licencji MIT. Chcesz zgłosić błąd lub dodać funkcję? Zajrzyj do pliku [CONTRIBUTING.md](CONTRIBUTING.md)!
 
 ## Portfolio
 Ten projekt jest częścią mojego portfolio programistycznego. Pokazuje praktyczne wykorzystanie AI, integrację z API, obsługę PDF oraz projektowanie prostych, użytecznych interfejsów w Pythonie.
