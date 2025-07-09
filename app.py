@@ -74,14 +74,15 @@ def enhance_description_with_ai(theme_val, desc_val, openai_key):
     """
     openai.api_key = openai_key
     system_prompt = (
-        "Jesteś kreatywnym asystentem, który pomaga tworzyć szczegółowe opisy do kolorowanek dla dzieci. "
-        "Twoim zadaniem jest wziąć temat i ogólny opis od użytkownika i przekształcić go w bardziej barwny, "
-        "szczegółowy i konkretny opis sceny, który będzie idealny dla generatora obrazów AI. "
-        "Opis powinien być prosty do zrozumienia dla dziecka i łatwy do narysowania. "
+        "Jesteś kreatywnym asystentem, który pomaga tworzyć szczegółowe, ale proste opisy do kolorowanek dla dzieci. "
+        "Twoim zadaniem jest wziąć temat i ogólny opis od użytkownika i przekształcić go w bardziej szczegółowy, konkretny opis sceny, "
+        "który będzie idealny dla generatora czarno-białych rysunków AI. "
+        "Opis powinien być prosty do zrozumienia dla dziecka, łatwy do narysowania i nie powinien zawierać żadnych odniesień do kolorów, dźwięków ani zapachów. "
+        "Unikaj wszelkich metafor barwnych, opisów kolorów, efektów dźwiękowych i zapachowych. Skup się wyłącznie na kształtach, postaciach, czynnościach i prostych detalach widocznych na rysunku. "
         "Zawsze zwracaj tylko i wyłącznie ulepszony opis, bez żadnych dodatkowych komentarzy. "
         "Jeśli zabraknie miejsca na odpowiedź, zakończ ją pełnym zdaniem, nie urywaj w połowie słowa. "
         "Przykład: Użytkownik: Temat=\"Zwierzęta\", Opis=\"kot\" "
-        "Ty: 'Uroczy, puszysty kotek z dużymi oczami bawi się kłębkiem wełny na miękkim dywanie w przytulnym pokoju.'"
+        "Ty: 'Puszysty kotek z dużymi oczami bawi się kłębkiem wełny na dywanie w pokoju.'"
     )
     user_prompt = f"Temat: '{theme_val}', Opis: '{desc_val}'"
     try:
@@ -111,21 +112,16 @@ def enhance_description_with_ai(theme_val, desc_val, openai_key):
 # Zwraca gotowy prompt tekstowy.
 def generate_coloring_page_prompt(theme_val, desc_val):
     """
-    Generuje prompt dla DALL-E na podstawie tematu i opisu.
+    Generuje minimalistyczny prompt dla DALL-E na podstawie tematu i opisu.
     :param theme_val: Temat kolorowanki
     :param desc_val: Opis sceny
     :return: str (prompt)
     """
     prompt_text = (
-        f"Stwórz stronę do kolorowania dla dzieci. Obrazek musi być wyłącznie czarno-biały, "
-        f"z grubymi, wyraźnymi konturami na czystym białym tle. "
-        f"Zabronione jest używanie jakichkolwiek kolorów, szarości, cieniowania, wypełnień, "
-        f"gradientów, tekstur, półtonów i wszelkich odcieni innych niż czysta czerń i biel. "
-        f"Tylko kontury i linie. "
-        f"Obrazek musi być w formacie poziomym, proporcje dokładnie 16:9 (lub 1792x1024px), idealnie dopasowane do kartki A4 w układzie poziomym. "
-        f"Wypełnij całą kartkę rysunkiem, nie zostawiaj pustych marginesów. "
-        f"Jeśli po bokach mają pojawić się paski lub tło, muszą być całkowicie białe (#FFFFFF), bez żadnych kolorów, wzorów ani cieniowania. "
-        f"Temat: {theme_val}. Opis: {desc_val}. Styl: prosta kreskówka."
+        f"Create a black-and-white line art illustration for a children’s coloring page. "
+        f"Style: simple clean outlines, no shading, no color fills, no frames or borders. "
+        f"Scene: {theme_val}. {desc_val}. "
+        f"White background. Output format: PNG on white canvas."
     )
     return prompt_text
 
@@ -134,7 +130,7 @@ def generate_coloring_page_prompt(theme_val, desc_val):
 # Zwraca (url, None) lub (None, komunikat o błędzie).
 def generate_image(prompt_val, openai_key):
     """
-    Generuje obraz za pomocą DALL-E 3 na podstawie promptu.
+    Generuje obraz za pomocą DALL-E 3 na podstawie promptu (1024x1024 px).
     :param prompt_val: Prompt tekstowy
     :param openai_key: Klucz API OpenAI
     :return: (str lub None, str lub None)
@@ -144,11 +140,10 @@ def generate_image(prompt_val, openai_key):
         response = openai.images.generate(
             model="dall-e-3",
             prompt=prompt_val,
-            size="1792x1024",  # proporcje poziome, zbliżone do A4
+            size="1024x1024",  # kwadratowy format
             quality="standard",
             n=1,
         )
-        # Bezpieczne pobranie url
         data = getattr(response, "data", None)
         if not data or not data[0] or not getattr(data[0], "url", None):
             return None, "Błąd: Brak obrazu z DALL-E. Spróbuj ponownie."
@@ -162,29 +157,23 @@ def generate_image(prompt_val, openai_key):
 # Zwraca (bytes, None) lub (None, komunikat o błędzie).
 def create_pdf(image_url):
     """
-    Tworzy plik PDF z wygenerowanego obrazka w poziomym układzie A4.
+    Tworzy plik PDF z wygenerowanego obrazka, umieszczając go na białym tle A4 (poziomo, 300 DPI).
     :param image_url: URL do obrazka
     :return: (bytes lub None, str lub None)
     """
     try:
         response = requests.get(image_url, timeout=10)
         img_data = BytesIO(response.content)
-        # Zapisz obraz tymczasowo na dysku, bo FPDF nie obsługuje obiektów Pillow ani BytesIO
         with Image.open(img_data) as img:
-            temp_path = "temp_coloring.png"
             img = img.convert("RGB")
-            # Przeskaluj do poziomego A4 (proporcje 297x210)
-            a4_ratio = 297 / 210
-            img_ratio = img.width / img.height
-            if img_ratio > a4_ratio:
-                # Obraz za szeroki – dopasuj wysokość
-                new_height = 1024
-                new_width = int(new_height * a4_ratio)
-            else:
-                # Obraz za wysoki – dopasuj szerokość
-                new_width = 1792
-                new_height = int(new_width / a4_ratio)
-            # Kompatybilność z różnymi wersjami Pillow
+            # Ustawienia A4 poziomo w pikselach (300 DPI): 3508x2480
+            a4_w, a4_h = 3508, 2480
+            canvas = Image.new("RGB", (a4_w, a4_h), "white")
+            # Przeskaluj wygenerowany kwadrat, by wypełnił możliwie szeroko:
+            w, h = img.size
+            new_w = a4_w
+            new_h = int(h * (a4_w / w))
+            # Ustal odpowiedni filtr resamplingu (kompatybilność z różnymi wersjami Pillow)
             try:
                 resample_filter = Image.Resampling.LANCZOS
             except AttributeError:
@@ -194,21 +183,28 @@ def create_pdf(image_url):
                         raise AttributeError
                 except AttributeError:
                     resample_filter = 1  # 1 = LANCZOS w Pillow
-            img_resized = img.resize((new_width, new_height), resample_filter)
-            img_resized.save(temp_path, format="PNG")
+            if new_h < a4_h:
+                resized = img.resize((new_w, new_h), resample_filter)
+            else:
+                new_h = a4_h
+                new_w = int(w * (a4_h / h))
+                resized = img.resize((new_w, new_h), resample_filter)
+            # Wycentruj na białym tle
+            x = (a4_w - resized.width) // 2
+            y = (a4_h - resized.height) // 2
+            canvas.paste(resized, (x, y))
+            # Zapisz do pliku tymczasowego
+            temp_path = "temp_coloring.png"
+            canvas.save(temp_path, format="PNG")
 
-        pdf = FPDF(orientation='L', unit='mm', format='A4')
+        pdf = FPDF(orientation="L", unit="mm", format="A4")
         pdf.add_page()
         # Wymiary A4 poziomo: 297 x 210 mm
-        page_width = 297
-        page_height = 210
-        # Wstaw obraz na całą stronę bez marginesów
-        pdf.image(temp_path, x=0, y=0, w=page_width, h=page_height)
+        pdf.image(temp_path, x=0, y=0, w=297, h=210)
         os.remove(temp_path)
-        # FPDF.output(dest='S') może zwracać str (wtedy trzeba zakodować na bytes)
         pdf_str = pdf.output(dest='S')
         if isinstance(pdf_str, str):
-            pdf_output = pdf_str.encode('latin1')  # FPDF używa latin1
+            pdf_output = pdf_str.encode('latin1')
         else:
             pdf_output = pdf_str
         return pdf_output, None
@@ -234,10 +230,9 @@ Aplikacja do generowania kolorowanek dla dzieci przy wykorzystaniu AI (DALL-E 3,
 
 
 # --- Sidebar - Klucz API ---
-st.sidebar.header("Konfiguracja")
 # Wprowadzenie klucza API OpenAI
 api_key_input = st.sidebar.text_input(
-    "Klucz API OpenAI", type="password",
+    "Wpisz klucz API OpenAI", type="password",
     help="Wpisz swój klucz API lub upewnij się, że jest w pliku .env"
 )
 api_key = api_key_input or os.getenv("OPENAI_API_KEY")
