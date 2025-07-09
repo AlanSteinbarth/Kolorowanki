@@ -1,35 +1,37 @@
-<p align="center">
-  <a href="screenshots/kolorowanka_Samochody_wyścigowe.pdf" target="_blank">
+<div align="center">
+  <img src="screenshots/cover.png" width="800" alt="Okładka projektu Generator Kolorowanek AI"/>
+  <br><i>Okładka projektu: AI rysujący kolorowankę dla dzieci.</i>
+</div>
+
+## Zrzuty ekranu
+
+<div align="center">
+  <a href="screenshots/kolorowanka_Samochody_wyścigowe.pdf">
     <img src="screenshots/gotowa_kolorowanka.png" width="600" alt="Podgląd pliku PDF z kolorowanką"/>
   </a>
   <br><i>Podgląd finalnego pliku PDF z kolorowanką. Kliknij, aby pobrać przykładowy PDF.</i>
-</p>
-## Zrzuty ekranu
+</div>
 
-<p align="center">
+<div align="center">
   <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.54.12.png" width="600" alt="Panel boczny i komunikat o poprawnym kluczu API"/>
   <br><i>Panel boczny z polem na klucz API oraz komunikat o poprawnym kluczu.</i>
-</p>
-<p align="center">
+</div>
+<div align="center">
   <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.54.31.png" width="600" alt="Wygenerowana kolorowanka - samochody wyścigowe"/>
   <br><i>Wygenerowana kolorowanka (samochody wyścigowe) – podgląd i pobieranie PDF.</i>
-</p>
-<p align="center">
+</div>
+<div align="center">
   <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.55.03.png" width="600" alt="Ulepszony opis przez AI"/>
   <br><i>Przykład ulepszonego opisu przez AI na podstawie prostego opisu użytkownika.</i>
-</p>
-<p align="center">
+</div>
+<div align="center">
   <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.55.22.png" width="600" alt="Pusty formularz startowy"/>
   <br><i>Początkowy widok aplikacji – puste pola do wpisania tematu i opisu kolorowanki.</i>
-</p>
-<p align="center">
+</div>
+<div align="center">
   <img src="screenshots/Zrzut%20ekranu%202025-07-9%20o%2010.56.04.png" width="600" alt="Brak klucza API"/>
   <br><i>Komunikat o braku klucza API – aplikacja nie pozwala przejść dalej bez klucza.</i>
-</p>
-<p align="center">
-  <img src="screenshots/gotowa_kolorowanka.png" width="600" alt="Przykładowa wygenerowana kolorowanka"/>
-  <br><i>Przykładowa wygenerowana kolorowanka (podgląd pliku PDF).</i>
-</p>
+</div>
 ## Bezpieczeństwo
 
 - Twój klucz API OpenAI **nie jest nigdzie zapisywany ani przechowywany** przez aplikację – jest używany wyłącznie w bieżącej sesji do komunikacji z API OpenAI.
