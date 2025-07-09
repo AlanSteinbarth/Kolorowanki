@@ -122,8 +122,9 @@ def generate_coloring_page_prompt(theme_val, desc_val):
         f"Zabronione jest używanie jakichkolwiek kolorów, szarości, cieniowania, wypełnień, "
         f"gradientów, tekstur, półtonów i wszelkich odcieni innych niż czysta czerń i biel. "
         f"Tylko kontury i linie. "
-        f"Obrazek musi być w formacie poziomym, proporcje i kompozycja idealnie dopasowane do kartki A4 w układzie poziomym (297x210mm, 1792x1024px). "
+        f"Obrazek musi być w formacie poziomym, proporcje dokładnie 16:9 (lub 1792x1024px), idealnie dopasowane do kartki A4 w układzie poziomym. "
         f"Wypełnij całą kartkę rysunkiem, nie zostawiaj pustych marginesów. "
+        f"Jeśli po bokach mają pojawić się paski lub tło, muszą być całkowicie białe (#FFFFFF), bez żadnych kolorów, wzorów ani cieniowania. "
         f"Temat: {theme_val}. Opis: {desc_val}. Styl: prosta kreskówka."
     )
     return prompt_text
@@ -143,7 +144,7 @@ def generate_image(prompt_val, openai_key):
         response = openai.images.generate(
             model="dall-e-3",
             prompt=prompt_val,
-            size="1024x1024",  # Zmieniono na kwadratowy, obsługiwany rozmiar
+            size="1792x1024",  # proporcje poziome, zbliżone do A4
             quality="standard",
             n=1,
         )
@@ -226,7 +227,7 @@ st.set_page_config(page_title="Generator Kolorowanek AI", layout="centered")
 
 
 # Nagłówek i opis
-st.title("🎨 Generator Kolorowanek AI")
+st.title("🎨 Generator Kolorowanek AI 🤖")
 st.write('''
 Aplikacja do generowania kolorowanek dla dzieci przy wykorzystaniu AI (DALL-E 3, GPT-4o).
 ''')
