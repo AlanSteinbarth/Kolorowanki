@@ -228,21 +228,18 @@ def create_pdf(image_url):
         img_data = BytesIO(response.content)
         with Image.open(img_data) as img:
             img = img.convert("RGB")
-            a4_w, a4_h = 3508, 2480  # 300 DPI
+            a4_w, a4_h = 3508, 2480  # 300 DPI (A4 poziomo)
             canvas = Image.new("RGB", (a4_w, a4_h), "white")
             w, h = img.size
-            new_w = a4_w
-            new_h = int(h * (a4_w / w))
-            # Ustal odpowiedni filtr resamplingu
+            # Jeśli obrazek jest większy niż A4, przeskaluj go proporcjonalnie (bez zmiany proporcji)
+            scale = min(a4_w / w, a4_h / h, 1.0)
+            new_w = int(w * scale)
+            new_h = int(h * scale)
             resample_filter = getattr(getattr(Image, "Resampling", Image), "LANCZOS", 1)
-            if new_h < a4_h:
-                resized = img.resize((new_w, new_h), resample_filter)
-            else:
-                new_h = a4_h
-                new_w = int(w * (a4_h / h))
-                resized = img.resize((new_w, new_h), resample_filter)
-            x = (a4_w - resized.width) // 2
-            y = (a4_h - resized.height) // 2
+            resized = img.resize((new_w, new_h), resample_filter) if scale < 1.0 else img
+            # Wyśrodkuj na białym tle
+            x = (a4_w - new_w) // 2
+            y = (a4_h - new_h) // 2
             canvas.paste(resized, (x, y))
             temp_path = "temp_coloring.png"
             canvas.save(temp_path, format="PNG")
